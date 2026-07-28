@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="mr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trimurti Runner | Ultra VFX Edition</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            user-select: none;
+        }
+        body {
+            background-color: #050508;
+            color: white;
+            text-align: center;
+            overflow: hidden;
+            touch-action: manipulation;
+        }
+
+        /* Main Game Container */
+        #game-card {
+            width: 100%;
+            max-width: 400px;
+            height: 580px; /* Buttons काढून टाकल्यामुळे हाईट वाढवली आहे */
+            margin: 10px auto;
+            background: radial-gradient(circle at center top, #1a1c2e 0%, #080911 100%);
+            position: relative;
+            overflow: hidden;
+            border: 2px solid #ff0f39;
+            border-radius: 20px;
+            box-shadow: 0 0 30px rgba(255, 15, 57, 0.4), inset 0 0 20px rgba(0, 0, 0, 0.8);
+            perspective: 600px;
+        }
+
+        /* 3D Track Environment */
+        .track-container {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            transform-style: preserve-3d;
+        }
+
+        .road {
+            position: absolute;
+            width: 100%;
+            height: 120%;
+            top: -10%;
+            background: linear-gradient(180deg, #111425 0%, #0a0b12 100%);
+            box-shadow: inset 0 0 50px rgba(0,0,0,0.9);
+            border-left: 4px solid #ff0f39;
+            border-right: 4px solid #ff0f39;
+        }
+
+        /* Moving Road Lines (VFX Speed Effect) */
+        .lane-lines {
+            position: absolute;
+            width: 100%;
+            height: 200%;
+            top: -100%;
+            display: flex;
+            animation: moveRoad 0.6s linear infinite;
+        }
+
+        @keyframes moveRoad {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(50%); }
+        }
+
+        .lane-line {
+            flex: 1;
+            border-right: 3px dashed rgba(255, 255, 255, 0.3);
+            box-shadow: 0 0 8px rgba(255, 255, 255, 0.2);
+        }
+
+        .lane-line:last-child {
+            border-right: none;
+        }
+
+        /* Side Glow Lines */
+        .side-glow-left, .side-glow-right {
+            position: absolute;
+            top: 0;
+            width: 6px;
+            height: 100%;
+            background: #ff0f39;
+            box-shadow: 0 0 15px #ff0f39, 0 0 30px #ff0f39;
+        }
+        .side-glow-left { left: 0; }
+        .side-glow-right { right: 0; }
+
+        /* Score Board */
+        .score-board {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            right: 15px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 1.1rem;
+            font-weight: bold;
+            z-index: 10;
+            background: rgba(10, 11, 18, 0.7);
+            padding: 8px 15px;
+            border-radius: 12px;
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+
+        /* Player Group Container */
+        #player-group {
+            position: absolute;
+            bottom: 110px;
+            width: 33.33%;
+            height: 100px;
+            transition: left 0.15s ease-out, bottom 0.2s ease-out;
+            z-index: 5;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .photos-container {
+            display: flex;
+            gap: 5px;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 4px 6px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 0 10px rgba(37, 211, 102, 0.3);
+        }
+
+        .player1-avatar {
+            width: 42px;
+            height: 48px;
+            border-radius: 8px;
+            border: 2px solid #ffffff;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.8);
+            background-image: url('https://i.ibb.co/Fkxh1S6X/image.jpg');
+            background-size: cover;
+            background-position: center;
+        }
+
+        .player2-avatar {
+            width: 42px;
+            height: 48px;
+            border-radius: 8px;
+            border: 2px solid #25d366;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.8);
+            background-image: url('https://i.ibb.co/rfRpqKCq/image.jpg');
+            background-size: cover;
+            background-position: center;
+        }
+
+        .bullet-bike {
+            font-size: 2.2rem;
+            margin-top: -10px;
+            filter: drop-shadow(0px 8px 6px rgba(0,0,0,0.9));
+        }
+
+        /* Barber Chaser */
+        #barber-chaser {
+            position: absolute;
+            bottom: -5px;
+            width: 33.33%;
+            height: 95px;
+            transition: left 0.2s ease-out, bottom 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 4;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .barber-name-tag {
+            background: #ff0f39;
+            color: #ffffff;
+            font-size: 0.7rem;
+            font-weight: bold;
+            padding: 2px 6px;
+            border-radius: 8px;
+            margin-bottom: 2px;
+            border: 1px solid #ffffff;
+            box-shadow: 0 0 8px rgba(255, 15, 57, 0.6);
+        }
+
+        .barber-head {
+            font-size: 1.3rem;
+            margin-bottom: -6px;
+            z-index: 2;
+        }
+
+        .hf-deluxe-bike {
+            background: #2563eb;
+            color: white;
+            font-size: 0.75rem;
+            font-weight: bold;
+            padding: 4px 8px;
+            border-radius: 8px;
+            border: 2px solid #fff;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* Cutting Animation Effect */
+        #cut-effect {
+            display: none;
+            position: absolute;
+            top: 40%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 5rem;
+            z-index: 15;
+            animation: snip 0.5s infinite alternate;
+            filter: drop-shadow(0 0 15px #ff0f39);
+        }
+
+        @keyframes snip {
+            0% { transform: translate(-50%, -50%) rotate(0deg) scale(1); }
+            100% { transform: translate(-50%, -50%) rotate(-30deg) scale(1.3); }
+        }
+
+        /* Obstacles & Coins */
+        .entity {
+            position: absolute;
+            width: 33.33%;
+            font-size: 2.5rem;
+            text-align: center;
+            top: -60px;
+            filter: drop-shadow(0 5px 5px rgba(0,0,0,0.7));
+        }
+
+        /* Game Over Screen */
+        #game-over {
+            display: none;
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(5, 5, 8, 0.95);
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 20;
+            backdrop-filter: blur(10px);
+        }
+        #restart-btn {
+            background: linear-gradient(135deg, #25d366, #128c7e);
+            color: white;
+            padding: 12px 30px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 10px;
+            margin-top: 20px;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(37, 211, 102, 0.5);
+        }
+    </style>
+</head>
+<body>
+
+    <h2 style="margin-top:10px; color:#ff0f39; text-shadow: 0 0 10px rgba(255,15,57,0.5);">🏎️ High VFX Track Edition 🏎️</h2>
+
+    <div id="game-card">
+        <div class="score-board">
+            <div>स्कोर: <span id="score" style="color:#25d366;">0</span></div>
+            <div>नाणी: <span id="coins" style="color:#ffcc00;">🪙 0</span></div>
+        </div>
+
+        <div class="track-container">
+            <div class="road"></div>
+            <div class="side-glow-left"></div>
+            <div class="side-glow-right"></div>
+            <div class="lane-lines" id="lane-animation">
+                <div class="lane-line"></div>
+                <div class="lane-line"></div>
+                <div class="lane-line"></div>
+            </div>
+        </div>
+
+        <!-- Single Box for Both Players on Bullet -->
+        <div id="player-group">
+            <div class="photos-container">
+                <div class="player1-avatar"></div>
+                <div class="player2-avatar"></div>
+            </div>
+            <div class="bullet-bike">🏍️</div>
+        </div>
+
+        <!-- Barber (Swayam) on HF-Deluxe -->
+        <div id="barber-chaser">
+            <div class="barber-name-tag">SWAYAM</div>
+            <div class="barber-head">💈👨‍🎨</div>
+            <div class="hf-deluxe-bike">
+                🛵 HF-Deluxe
+            </div>
+        </div>
+
+        <!-- Cutting Scissors Effect -->
+        <div id="cut-effect">✂️💈</div>
+
+        <!-- Game Over Screen -->
+        <div id="game-over">
+            <div style="font-size: 4rem; margin-bottom: 5px;">👨‍🦲✨</div>
+            <h1 style="color:#ff0f39; font-size: 1.5rem; padding: 0 10px; line-height: 1.3;">Swayam ne tula pakadle ani tumchi badharli! 😂✂️</h1>
+            <p style="font-size: 1.1rem; color:#aaa; margin-top: 8px;">आता नवीन शेंटे येईपर्यंत पुन्हा पळा!</p>
+            <p style="font-size: 1.2rem; margin-top: 15px;">एकूण स्कोर: <span id="final-score" style="color:#25d366;">0</span></p>
+            <p style="font-size: 1.1rem; color: #ffcc00; margin-top: 5px;">गोळा केलेली नाणी: <span id="final-coins">0</span></p>
+            <button id="restart-btn" onclick="restartGame()">नवीन शेंटे घेऊन पुन्हा खेळा 🔄</button>
+        </div>
+    </div>
+
+    <script>
+        const playerGroup = document.getElementById('player-group');
+        const barber = document.getElementById('barber-chaser');
+        const cutEffect = document.getElementById('cut-effect');
+        const scoreDisplay = document.getElementById('score');
+        const coinsDisplay = document.getElementById('coins');
+        const gameOverScreen = document.getElementById('game-over');
+        const finalScore = document.getElementById('final-score');
+        const finalCoins = document.getElementById('final-coins');
+        const gameCard = document.getElementById('game-card');
+        const laneAnim = document.getElementById('lane-animation');
+
+        let currentLane = 1;
+        let isJumping = false;
+        let score = 0;
+        let coins = 0;
+        let isGameOver = false;
+        let gameLoop, spawnLoop;
+
+        const lanes = [0, 33.33, 66.66];
+        const obstacles = ['🚧', '🚌', '📦', '🛢️'];
+        const rewards = ['🪙', '🐔', '🍗'];
+
+        let touchStartX = 0;
+        let touchStartY = 0;
+
+        gameCard.addEventListener('touchstart', e => {
+            touchStartX = e.changedTouches[0].screenX;
+            touchStartY = e.changedTouches[0].screenY;
+        });
+
+        gameCard.addEventListener('touchend', e => {
+            let touchEndX = e.changedTouches[0].screenX;
+            let touchEndY = e.changedTouches[0].screenY;
+            handleSwipe(touchStartX, touchStartY, touchEndX, touchEndY);
+        });
+
+        function handleSwipe(startX, startY, endX, endY) {
+            let diffX = endX - startX;
+            let diffY = endY - startY;
+
+            if (Math.abs(diffX) > Math.abs(diffY)) {
+                if (diffX > 30) moveRight();
+                else if (diffX < -30) moveLeft();
+            } else {
+                if (diffY < -30) jump();
+            }
+        }
+
+        function updatePositions() {
+            playerGroup.style.left = lanes[currentLane] + '%';
+
+            setTimeout(() => {
+                barber.style.left = lanes[currentLane] + '%';
+            }, 140);
+        }
+
+        function moveLeft() {
+            if (isGameOver) return;
+            if (currentLane > 0) {
+                currentLane--;
+                updatePositions();
+            }
+        }
+
+        function moveRight() {
+            if (isGameOver) return;
+            if (currentLane < 2) {
+                currentLane++;
+                updatePositions();
+            }
+        }
+
+        function jump() {
+            if (isGameOver || isJumping) return;
+            isJumping = true;
+            
+            playerGroup.style.bottom = '190px';
+
+            setTimeout(() => {
+                playerGroup.style.bottom = '110px';
+                setTimeout(() => { isJumping = false; }, 200);
+            }, 350);
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft' || e.key === 'a') moveLeft();
+            if (e.key === 'ArrowRight' || e.key === 'd') moveRight();
+            if (e.key === 'ArrowUp' || e.key === 'w' || e.key === ' ') jump();
+        });
+
+        function spawnEntity() {
+            if (isGameOver) return;
+
+            const entity = document.createElement('div');
+            entity.classList.add('entity');
+            
+            const lane = Math.floor(Math.random() * 3);
+            const isReward = Math.random() > 0.6;
+
+            const type = isReward 
+                ? rewards[Math.floor(Math.random() * rewards.length)]
+                : obstacles[Math.floor(Math.random() * obstacles.length)];
+
+            entity.innerText = type;
+            entity.dataset.type = isReward ? 'reward' : 'obstacle';
+            entity.dataset.lane = lane;
+            entity.style.left = lanes[lane] + '%';
+            entity.style.top = '-60px';
+
+            gameCard.appendChild(entity);
+
+            let topPos = -60;
+            let speed = 6 + Math.floor(score / 50);
+
+            const moveInterval = setInterval(() => {
+                if (isGameOver) {
+                    clearInterval(moveInterval);
+                    entity.remove();
+                    return;
+                }
+
+                topPos += speed;
+                entity.style.top = topPos + 'px';
+
+                if (topPos >= 360 && topPos <= 420) {
+                    if (parseInt(entity.dataset.lane) === currentLane) {
+                        if (entity.dataset.type === 'obstacle') {
+                            if (!isJumping) {
+                                endGame();
+                            }
+                        } else if (entity.dataset.type === 'reward') {
+                            coins += 1;
+                            score += 10;
+                            coinsDisplay.innerText = '🪙 ' + coins;
+                            clearInterval(moveInterval);
+                            entity.remove();
+                        }
+                    }
+                }
+
+                if (topPos > 580) {
+                    clearInterval(moveInterval);
+                    entity.remove();
+                }
+            }, 20);
+        }
+
+        function startGame() {
+            currentLane = 1;
+            score = 0;
+            coins = 0;
+            isGameOver = false;
+            laneAnim.style.animationPlayState = 'running';
+            barber.style.bottom = '-5px';
+            playerGroup.style.bottom = '110px';
+            updatePositions();
+            scoreDisplay.innerText = '0';
+            coinsDisplay.innerText = '🪙 0';
+            gameOverScreen.style.display = 'none';
+            cutEffect.style.display = 'none';
+
+            gameLoop = setInterval(() => {
+                if (!isGameOver) {
+                    score += 1;
+                    scoreDisplay.innerText = score;
+                }
+            }, 100);
+
+            spawnLoop = setInterval(spawnEntity, 900);
+        }
+
+        function endGame() {
+            isGameOver = true;
+            laneAnim.style.animationPlayState = 'paused';
+            clearInterval(gameLoop);
+            clearInterval(spawnLoop);
+            finalScore.innerText = score;
+            finalCoins.innerText = coins;
+            
+            barber.style.bottom = '105px';
+            
+            setTimeout(() => {
+                cutEffect.style.display = 'block';
+            }, 200);
+
+            setTimeout(() => {
+                cutEffect.style.display = 'none';
+                gameOverScreen.style.display = 'flex';
+                barber.style.bottom = '-5px';
+            }, 1300);
+        }
+
+        function restartGame() {
+            document.querySelectorAll('.entity').forEach(e => e.remove());
+            startGame();
+        }
+
+        startGame();
+    </script>
+</body>
+</html>
